@@ -39,6 +39,7 @@ function normalizeSymbol(raw) {
 
 async function onStart(event) {
   event.preventDefault();
+  UI.resetErrorStyle();
   const symbol = normalizeSymbol(UI.els["symbol-input"].value);
   if (!symbol) {
     UI.startError("Entrez un symbole, par exemple BTCUSDT.");
@@ -49,12 +50,15 @@ async function onStart(event) {
   const check = await validateSymbol(symbol);
   if (check !== "ok") {
     // Marché introuvable ou vérification impossible : on n'ouvre rien.
+    UI.resetErrorStyle();
     UI.startError(check === "invalid" ? "non disponible" : "non disponible (vérification impossible)");
     return;
   }
 
+  UI.loading("Symbole disponible. Chargement de l'historique…");
   const history = await loadHistory(symbol).catch(() => null);
   if (!history || history.length < 40) {
+    UI.resetErrorStyle();
     UI.startError("non disponible (historique indisponible)");
     return;
   }
@@ -81,6 +85,8 @@ function startSession(symbol, history) {
   UI.showGame(symbol);
   UI.mountChart(symbol);
   UI.setPaused(false);
+  window.scrollTo(0, 0);
+  UI.checkChartLoaded();
 
   Session.feed = new BinanceFeed(symbol, {
     onTick: handleTick,

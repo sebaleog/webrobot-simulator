@@ -17,6 +17,10 @@
 
 * { box-sizing: border-box; }
 
+/* L'attribut hidden doit primer sur toutes les règles display d'auteur
+   (sans ça, #start-screen { display: flex } neutralise hidden). */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -137,6 +141,23 @@ button.secondary { background: var(--bg-3); border: 1px solid var(--border); }
   color: var(--neg);
   font-weight: 600;
   margin: 12px 0 0;
+}
+
+.info {
+  color: var(--accent);
+  font-weight: 500;
+  margin: 12px 0 0;
+}
+
+.chart-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--muted);
+  padding: 24px;
+  line-height: 1.6;
 }
 
 .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 16px; }

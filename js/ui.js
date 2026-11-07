@@ -23,14 +23,22 @@ const UI = {
   showStart() {
     this.els["start-screen"].hidden = false;
     this.els["game-screen"].hidden = true;
+    this.resetForm();
+  },
+
+  resetForm() {
     this.els["symbol-error"].hidden = true;
+    this.resetErrorStyle();
     this.els["symbol-input"].disabled = false;
-    this.els["symbol-form"].querySelector("button").disabled = false;
+    const btn = this.els["symbol-form"].querySelector("button");
+    btn.disabled = false;
+    btn.textContent = "Lancer";
   },
 
   showGame(symbol) {
     this.els["start-screen"].hidden = true;
     this.els["game-screen"].hidden = false;
+    this.resetForm();
     this.els["live-symbol"].textContent = symbol;
     this.els["live-price"].textContent = "—";
   },
@@ -41,12 +49,30 @@ const UI = {
     el.hidden = false;
     this.els["symbol-input"].disabled = false;
     this.els["symbol-form"].querySelector("button").disabled = false;
+    this.els["symbol-form"].querySelector("button").textContent = "Lancer";
   },
 
   busy() {
     this.els["symbol-error"].hidden = true;
     this.els["symbol-input"].disabled = true;
-    this.els["symbol-form"].querySelector("button").disabled = true;
+    const btn = this.els["symbol-form"].querySelector("button");
+    btn.disabled = true;
+    btn.textContent = "Vérification…";
+  },
+
+  // Retour visuel pendant le chargement de l'historique
+  loading(message) {
+    const el = this.els["symbol-error"];
+    el.textContent = message;
+    el.hidden = false;
+    el.className = "info";
+    const btn = this.els["symbol-form"].querySelector("button");
+    btn.textContent = "Chargement…";
+  },
+
+  resetErrorStyle() {
+    const el = this.els["symbol-error"];
+    el.className = "error";
   },
 
   price(price) {
@@ -167,6 +193,24 @@ const UI = {
     });
     wrap.appendChild(script);
     container.appendChild(wrap);
+  },
+
+  /* Si le widget TradingView ne se charge pas (réseau, blocage),
+     on l'affiche au lieu d'un cadre vide. */
+  checkChartLoaded() {
+    if (this._chartTimer) clearTimeout(this._chartTimer);
+    this._chartTimer = setTimeout(() => {
+      const container = this.els["chart"];
+      if (!container || container.hidden) return;
+      if (container.querySelector("iframe")) return;
+      const msg = document.createElement("div");
+      msg.className = "chart-fallback";
+      msg.innerHTML =
+        "Graphique TradingView indisponible (chargement bloqué ou réseau).<br>" +
+        "Le simulateur, lui, reste opérationnel avec les prix en direct.";
+      container.innerHTML = "";
+      container.appendChild(msg);
+    }, 8000);
   },
 
   /* ---------- Formats ---------- */
