@@ -1,0 +1,272 @@
+/* =====================================================================
+   style.css — thème sombre type trading, sans dépendance
+   ===================================================================== */
+
+:root {
+  --bg: #0e1117;
+  --bg-2: #161b26;
+  --bg-3: #1d2433;
+  --border: #2a3347;
+  --text: #dbe2ef;
+  --muted: #8b94a7;
+  --accent: #3b82f6;
+  --pos: #22c55e;
+  --neg: #ef4444;
+  --warn: #f59e0b;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main { flex: 1; }
+
+/* ------------------------------------------------------ topbar ------ */
+
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+}
+
+#topbar h1 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+#topbar h1 small {
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+  margin-left: 8px;
+}
+
+#market-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+#live-symbol { font-weight: 600; color: var(--accent); }
+
+#live-price { font-size: 16px; font-weight: 600; }
+
+.status { font-size: 12px; padding: 3px 9px; border-radius: 999px; }
+.status-live { background: rgba(34, 197, 94, .15); color: var(--pos); }
+.status-wait { background: rgba(245, 158, 11, .15); color: var(--warn); }
+.status-off  { background: rgba(139, 148, 167, .15); color: var(--muted); }
+
+/* ------------------------------------------------------ écran accès - */
+
+#start-screen {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8vh 16px;
+}
+
+#symbol-form {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 480px;
+}
+
+#symbol-form h2 { margin: 0 0 18px; font-size: 19px; }
+
+#symbol-form label {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+#symbol-form .row { display: flex; gap: 10px; }
+
+#symbol-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+#symbol-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.1); }
+button:disabled { opacity: .5; cursor: wait; }
+button.secondary { background: var(--bg-3); border: 1px solid var(--border); }
+
+.error {
+  color: var(--neg);
+  font-weight: 600;
+  margin: 12px 0 0;
+}
+
+.hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 16px; }
+
+/* ------------------------------------------------------ jeu --------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar-info { color: var(--muted); font-size: 13px; }
+.spacer { flex: 1; }
+.toolbar button { padding: 7px 16px; font-size: 14px; }
+
+.layout {
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  align-items: stretch;
+}
+
+#chart {
+  flex: 1;
+  min-width: 0;
+  height: calc(100vh - 210px);
+  min-height: 480px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#panel {
+  width: 350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.card dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.card dt { color: var(--muted); font-size: 13px; }
+.card dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pos { color: var(--pos) !important; }
+.neg { color: var(--neg) !important; }
+.muted { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0; }
+
+#strategy-line { font-size: 13px; }
+
+/* ------------------------------------------------------ trades ------ */
+
+#trades-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+#trades-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+#trades-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--bg-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#trades-table { display: block; overflow-x: auto; }
+
+/* ------------------------------------------------------ disclaimer -- */
+
+#disclaimer {
+  background: var(--bg-3);
+  border-top: 2px solid var(--warn);
+  color: var(--text);
+  padding: 11px 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+#disclaimer .disclaimer-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+/* ------------------------------------------------------ responsive -- */
+
+@media (max-width: 980px) {
+  .layout { flex-direction: column; }
+  #chart { height: 55vh; min-height: 340px; }
+  #panel { width: 100%; }
+  #topbar { flex-direction: column; align-items: flex-start; gap: 6px; }
+}

@@ -1,0 +1,9 @@
+# Site statique : aucun build, aucun serveur, coût 0 €
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

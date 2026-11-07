@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>TEOTRADE — Simulateur VWAP + EMA 9/20 + CBC</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header id="topbar">
+    <h1>TEOTRADE <small>Simulateur VWAP + EMA 9/20 + CBC</small></h1>
+    <div id="market-info">
+      <span id="live-symbol">—</span>
+      <span id="live-price">—</span>
+      <span id="feed-status" class="status status-off">flux : hors ligne</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Écran d'accès : un seul symbole, vérifié avant toute session -->
+    <section id="start-screen">
+      <form id="symbol-form" autocomplete="off">
+        <h2>Lancer une session de simulation</h2>
+        <label for="symbol-input">Symbole de marché Binance (une seule valeur)</label>
+        <div class="row">
+          <input id="symbol-input" name="symbol" value="BTCUSDT"
+                 placeholder="BTCUSDT" spellcheck="false" maxlength="20">
+          <button type="submit">Lancer</button>
+        </div>
+        <p id="symbol-error" class="error" hidden>non disponible</p>
+        <p class="hint">
+          Capital fictif de départ : <strong>10 000 €</strong>.
+          Prix en direct via le flux public Binance, graphique fourni par TradingView.
+          Aucune donnée n'est conservée : fermer la page efface la session.
+        </p>
+      </form>
+    </section>
+
+    <!-- Écran de simulation -->
+    <section id="game-screen" hidden>
+      <div class="toolbar">
+        <span class="toolbar-info">Session simulée · capital de départ 10 000 €</span>
+        <span class="spacer"></span>
+        <button id="btn-pause" type="button">Pause</button>
+        <button id="btn-reset" type="button" class="secondary">Nouvelle session</button>
+      </div>
+
+      <div class="layout">
+        <div id="chart" aria-label="Graphique TradingView"></div>
+
+        <aside id="panel">
+          <div class="card">
+            <h3>Compte</h3>
+            <dl>
+              <dt>Capital initial</dt><dd id="stat-capital">—</dd>
+              <dt>Équité</dt><dd id="stat-equity">—</dd>
+              <dt>P&L réalisé</dt><dd id="stat-pnl">—</dd>
+            </dl>
+          </div>
+
+          <div class="card" id="position-box">
+            <h3>Position ouverte</h3>
+            <p id="position-empty" class="muted">Aucune position.</p>
+            <dl id="position-detail" hidden>
+              <dt>Sens</dt><dd class="pos-side">—</dd>
+              <dt>Entrée</dt><dd class="pos-entry">—</dd>
+              <dt>Stop-loss</dt><dd class="pos-sl">—</dd>
+              <dt>Take-profit</dt><dd class="pos-tp">—</dd>
+              <dt>P&L flottant</dt><dd class="pos-floating">—</dd>
+            </dl>
+          </div>
+
+          <div class="card">
+            <h3>Statistiques</h3>
+            <dl>
+              <dt>Trades clos</dt><dd id="stat-trades">0</dd>
+              <dt>Taux de réussite</dt><dd id="stat-winrate">—</dd>
+              <dt>Résultat cumulé</dt><dd id="stat-totalr">—</dd>
+              <dt>Drawdown max</dt><dd id="stat-drawdown">—</dd>
+            </dl>
+          </div>
+
+          <div class="card">
+            <h3>Décision courante</h3>
+            <p id="strategy-line" class="muted">En attente de la première bougie…</p>
+          </div>
+
+          <div class="card">
+            <h3>Historique des trades</h3>
+            <p id="trades-empty" class="muted">Aucun trade pour l'instant. Les signaux sont
+              rares (bougie 1 minute) : une courte session peut n'en produire aucun.</p>
+            <table id="trades-table">
+              <thead>
+                <tr>
+                  <th>Heure</th><th>Sens</th><th>Entrée</th><th>Sortie</th>
+                  <th>Motif</th><th>P&L</th><th>R</th>
+                </tr>
+              </thead>
+              <tbody id="trades-body"></tbody>
+            </table>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer id="disclaimer">
+    <strong>Ceci n'est pas un conseil de trading, mais un test pédagogique de
+    construction d'interface. L'utilisation de cette interface ne saurait constituer
+    la moindre responsabilité lors d'une utilisation de trading réel.</strong>
+    <span class="disclaimer-sub">
+      Résultats entièrement fictifs · capital 10 000 € virtuel · frais et slippage
+      forfaitaires · aucune donnée personnelle stockée · prix : flux public Binance ·
+      graphique : widget officiel TradingView
+    </span>
+  </footer>
+
+  <script src="js/indicators.js"></script>
+  <script src="js/strategy.js"></script>
+  <script src="js/broker.js"></script>
+  <script src="js/feed.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
