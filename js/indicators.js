@@ -88,9 +88,32 @@ class IndicatorSet {
     this.last = null; // dernière bougie mise à jour
   }
 
-  // Passe sur une série de bougies SANS générer de signaux (amorçage)
-  warmup(candles) {
-    for (const c of candles) this.update(c);
+  // Passe sur une série de bougies SANS générer de signaux (amorçage).
+  // Si `snapshots` est fourni, enregistre l'état des indicateurs à chaque
+  // bougie (aligné index par index sur `candles`) — utilisé pour le warm
+  // start de la stratégie et pour le graphe de l'historique.
+  warmup(candles, snapshots) {
+    let key = null;
+    let sumPV = 0;
+    let sumV = 0;
+    for (const c of candles) {
+      this.update(c);
+      if (!snapshots) continue;
+      // VWAP de session calculé au fil de l'eau (aucun avenir consulté)
+      const k = sessionKey(c.time);
+      if (k !== key) { key = k; sumPV = 0; sumV = 0; }
+      const v = c.volume || 0;
+      sumPV += typicalPrice(c) * v;
+      sumV += v;
+      snapshots.push({
+        ema9: this.ema9.value,
+        ema20: this.ema20.value,
+        atr: this.atr.value,
+        vwap: sumV > 0 ? sumPV / sumV : c.close,
+        pivots: pivotsFrom(c),
+        ready: this.ema9.ready() && this.ema20.ready() && this.atr.ready(),
+      });
+    }
   }
 
   // Met à jour l'état à chaque nouvelle bougie (clôturée ou en cours de remplacement)

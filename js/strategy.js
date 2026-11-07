@@ -87,6 +87,24 @@ class Strategy {
     return null;
   }
 
+  /**
+   * Warm start : reconstruit l'état interne (repli armé, âge du repli,
+   * tendance) en rejouant les règles sur l'historique, SANS émettre de
+   * trade. Les signaux retournés pendant le replay sont ignorés — seul
+   * l'état compte, l'évaluation « sérieuse » se fait sur la dernière
+   * bougie clôturée.
+   *
+   * @param {Array} candles    bougies clôturées (hors bougie en cours)
+   * @param {Array} snapshots  indicateurs alignés sur ces bougies
+   */
+  warmStart(candles, snapshots) {
+    this.reset();
+    for (let i = 1; i < candles.length; i++) {
+      this.onCandle(candles[i], candles[i - 1], snapshots[i]);
+      // signal éventuel délibérément ignoré : reconstruction d'état uniquement
+    }
+  }
+
   // Journal lisible des étapes de décision (affiché dans l'UI)
   describe(candle, prev, ind) {
     if (!prev || !ind || !ind.ready) return "amorçage des indicateurs…";

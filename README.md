@@ -12,12 +12,18 @@ de trading **en temps réel** avec un capital **fictif de 10 000 €**.
 1. L'utilisateur saisit **un seul symbole** Binance (ex. `BTCUSDT`).
 2. Le symbole est vérifié sur l'API publique Binance ; s'il n'existe pas →
    message **« non disponible »**, aucune session n'est ouverte.
-3. 200 bougies 1 min sont chargées pour amorcer les indicateurs
-   (aucun trade n'est généré sur ces bougies passées).
-4. Le flux WebSocket temps réel démarre :
+3. 200 bougies 1 min sont chargées pour amorcer les indicateurs.
+   La dernière ligne étant la bougie **en cours**, elle est mise de côté
+   (jamais utilisée pour décider : règle CBC sur bougies clôturées).
+4. **Warm start + décision immédiate** : les règles sont rejouées sur
+   l'historique pour reconstruire l'état (tendance, repli armé) **sans**
+   générer de trade sur le passé ; la dernière bougie clôturée est alors
+   évaluée tout de suite. La décision s'affiche au lancement
+   (« repli armé » / « pas de repli », signal éventuel entré au prix live).
+5. Le flux WebSocket temps réel démarre :
    - `kline_1m` → décision **uniquement à la clôture** de chaque bougie,
    - `aggTrade` → suivi tick par tick du prix et des stop/target.
-5. Fermer ou recharger la page **efface tout** : ni cookies, ni
+6. Fermer ou recharger la page **efface tout** : ni cookies, ni
    localStorage, ni base de données. Chaque connexion = session à zéro.
 
 ## Règles de la stratégie (hypothèses de départ, non validées)
@@ -103,11 +109,12 @@ webrobot_simulator/
 ├── index.html        page unique (formulaire, chart, panneau, mention)
 ├── css/style.css     thème sombre
 ├── js/
-│   ├── indicators.js VWAP, EMA 9/20, ATR(14), pivots
-│   ├── strategy.js   règles LONG/SHORT (bougies clôturées uniquement)
+│   ├── indicators.js VWAP, EMA 9/20, ATR(14), pivots (+ snapshots par bougie)
+│   ├── strategy.js   règles LONG/SHORT (bougies clôturées uniquement) + warm start
 │   ├── broker.js     portefeuille 10 000 €, SL/TP, frais, statistiques
 │   ├── feed.js       WebSocket Binance + REST (validation, historique)
 │   ├── ui.js         rendu + widget TradingView
+│   ├── chart.js      graphe « vue du robot » (canvas : bougies, EMA, VWAP, trades)
 │   └── main.js       cycle de vie de la session (état en mémoire)
 ├── netlify.toml      publication Netlify (statique)
 └── README.md         ce fichier

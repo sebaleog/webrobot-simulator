@@ -18,14 +18,17 @@
 const Session = {
   symbol: null,
   candles: [],
+  snapshots: [],   // état des indicateurs à chaque bougie clôturée (aligné sur candles)
   indicators: null,
   strategy: null,
   broker: null,
   feed: null,
+  chart: null,
   paused: false,
-  warmedUntil: 0, // timestamp de la dernière bougie d'amorçage
+  warmedUntil: 0, // timestamp de la dernière bougie CLÔTURÉE au démarrage
   lastPrice: null,
   pendingLive: null, // bougie 1m reçue en direct, mise à jour à chaque tick kline
+  lastChartRender: 0,
 };
 
 /* ------------------------------------------------------ formulaire ---- */
@@ -73,14 +76,24 @@ function startSession(symbol, history) {
 
   Session.symbol = symbol;
   Session.candles = history.slice();
+  Session.snapshots = [];
+  Session.lastChartRender = 0;
+
+  // La dernière ligne REST est la bougie de la minute en cours si elle
+  // a moins de ~55 s : elle n'est pas clôturée, elle ne décide de rien.
+  const n = Session.candles.length;
+  const lastC = Session.candles[n - 1];
+  const inProgress = (Date.now() - lastC.time) < 55000;
+  Session.pendingLive = inProgress ? { ...Session.candles.pop(), closed: false } : null;
+
+  const closed = Session.candles; // uniquement des bougies clôturées désormais
   Session.indicators = new IndicatorSet();
-  Session.indicators.warmup(Session.candles);
+  Session.indicators.warmup(closed, Session.snapshots);
   Session.strategy = new Strategy();
   Session.broker = new Broker();
   Session.paused = false;
-  Session.warmedUntil = Session.candles[Session.candles.length - 1].time;
-  Session.lastPrice = Session.candles[Session.candles.length - 1].close;
-  Session.pendingLive = null;
+  Session.warmedUntil = closed.length ? closed[closed.length - 1].time : 0;
+  Session.lastPrice = Session.pendingLive ? Session.pendingLive.close : lastC.close;
 
   UI.showGame(symbol);
   UI.mountChart(symbol);
@@ -95,7 +108,50 @@ function startSession(symbol, history) {
   });
   Session.feed.start();
 
+  // --- A+B : warm start + décision immédiate au lancement ---------------
+  immediateDecision(closed);
+
   refreshPanel();
+  renderChart(true);
+}
+
+/* Reconstruit l'état de la stratégie sur l'historique, puis décide
+ * immédiatement à partir de la dernière bougie clôturée. */
+function immediateDecision(closed) {
+  const { strategy, broker, snapshots } = Session;
+  if (closed.length < 40 || snapshots.length < 40) {
+    UI.strategyLine("Amorçage des indicateurs…");
+    return;
+  }
+
+  const evalIdx = closed.length - 1;
+  const candle = closed[evalIdx];
+  const prev = evalIdx > 0 ? closed[evalIdx - 1] : null;
+  const snap = snapshots[evalIdx];
+
+  // 1. Rejeu des règles sur l'historique : reconstruction de l'état seul
+  //    (signaux ignorés : on ne fabrique aucun trade sur le passé).
+  strategy.warmStart(closed.slice(0, evalIdx), snapshots);
+
+  if (!snap || !snap.ready || !prev) {
+    UI.strategyLine("Amorçage des indicateurs…");
+    return;
+  }
+
+  // 2. Évaluation réelle sur la dernière bougie clôturée.
+  const signal = strategy.onCandle(candle, prev, snap);
+  if (signal) {
+    const pos = broker.open(signal, candle, snap, closed, Session.lastPrice);
+    if (pos) {
+      UI.strategyLine(
+        `Signal ${signal} au démarrage — entrée ${UI.fmtPrice(pos.entry)} · ` +
+        `SL ${UI.fmtPrice(pos.sl)} · TP ${UI.fmtPrice(pos.tp)}`
+      );
+      return;
+    }
+  }
+  // 3. Décision « ne rien faire » : c'est aussi une décision, affichée.
+  UI.strategyLine(strategy.describe(candle, prev, snap) + " · décision immédiate");
 }
 
 function stopSession() {
@@ -125,6 +181,7 @@ function handleTick(price, timeMs) {
   }
 
   refreshPanel();
+  renderChart(); // rendu throttlé (~5 fps) : les ticks sont nombreux
 }
 
 function handleKline(k) {
@@ -141,12 +198,26 @@ function handleKline(k) {
   const last = candles[candles.length - 1];
 
   if (k.time <= last.time) {
-    // Cas de rattrapage (même bougie que la dernière chargée)
+    // Rattrapage : la bougie finale remplace la version partielle chargée
+    // en REST. Si elle vient de clôturer, elle doit être évaluée.
     candles[candles.length - 1] = k;
+    if (k.time > Session.warmedUntil) {
+      processClosedCandle(k);
+    } else {
+      // Bougie d'amorçage déjà prise en compte : on met juste l'état à jour.
+      Session.indicators.update(k);
+      Session.snapshots[Session.snapshots.length - 1] =
+        Session.indicators.snapshot(candles, k.time);
+      renderChart(true);
+    }
     return;
   }
   candles.push(k);
-  if (candles.length > 1500) candles.splice(0, candles.length - 1500);
+  if (candles.length > 1500) {
+    const drop = candles.length - 1500;
+    candles.splice(0, drop);
+    Session.snapshots.splice(0, drop);
+  }
 
   processClosedCandle(k);
 }
@@ -155,6 +226,8 @@ function handleKline(k) {
 function processClosedCandle(candle) {
   const { indicators, strategy, broker, candles } = Session;
   indicators.update(candle);
+  // Enregistrement aligné pour le graphe et le rejeu de stratégie
+  Session.snapshots.push(indicators.snapshot(candles, candle.time));
 
   // 1. Vérifier les sorties du trade ouvert (bougie complète)
   const exited = broker.checkCandle(candle);
@@ -188,6 +261,23 @@ function processClosedCandle(candle) {
   }
 
   refreshPanel();
+  renderChart(true);
+}
+
+/* Rendu du graphe « vue du robot » (throttlé sur les ticks). */
+function renderChart(force) {
+  if (!Session.chart || !Session.broker) return;
+  const now = Date.now();
+  if (!force && now - Session.lastChartRender < 200) return;
+  Session.lastChartRender = now;
+  Session.chart.render({
+    candles: Session.candles,
+    snapshots: Session.snapshots,
+    pending: Session.pendingLive,
+    position: Session.broker.position,
+    trades: Session.broker.trades,
+    livePrice: Session.lastPrice,
+  });
 }
 
 /* ------------------------------------------------------ panneau ------ */
@@ -225,6 +315,7 @@ function onReset() {
 window.addEventListener("DOMContentLoaded", () => {
   UI.init();
   UI.showStart();
+  Session.chart = new RobotChart(document.getElementById("robot-chart"));
   UI.els["symbol-form"].addEventListener("submit", onStart);
   UI.els["btn-pause"].addEventListener("click", onPause);
   UI.els["btn-reset"].addEventListener("click", onReset);

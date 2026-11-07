@@ -43,15 +43,20 @@ class Broker {
    * @param {object} candle  bougie de confirmation (on entre à sa clôture)
    * @param {object} ind     instantané d'indicateurs
    * @param {Array}  candles série complète (pour le creux/creta local)
+   * @param {number} [entryPrice] prix réel d'entrée (warm start : prix live,
+   *                              sinon la clôture de la bougie de signal)
    * @returns position ou null
    * --------------------------------------------------------------- */
-  open(side, candle, ind, candles) {
+  open(side, candle, ind, candles, entryPrice) {
     if (this.position) return null;
     if (!ind || !ind.ready || !(ind.atr > 0)) return null;
 
     const long = side === "LONG";
     const slip = this.slippagePct;
-    const entry = long ? candle.close * (1 + slip) : candle.close * (1 - slip);
+    const base = (typeof entryPrice === "number" && isFinite(entryPrice))
+      ? entryPrice
+      : candle.close;
+    const entry = long ? base * (1 + slip) : base * (1 - slip);
 
     // Stop-loss sous le creux local (5 bougies) avec marge ATR
     const window = candles.slice(-5);

@@ -48,7 +48,24 @@
       </div>
 
       <div class="layout">
-        <div id="chart" aria-label="Graphique TradingView"></div>
+        <div class="chart-column">
+          <!-- Graphe des données réellement utilisées par le robot -->
+          <div class="robot-view">
+            <div class="robot-view-head">
+              <strong>Vue du robot — historique de décisions</strong>
+              <span class="legend">
+                <i class="lg" style="--c:#3b82f6"></i>EMA 9
+                <i class="lg" style="--c:#f59e0b"></i>EMA 20
+                <i class="lg" style="--c:#a78bfa"></i>VWAP
+                <i class="lg lg-long"></i>entrée LONG
+                <i class="lg lg-short"></i>entrée SHORT
+                <i class="lg lg-exit"></i>sortie
+              </span>
+            </div>
+            <canvas id="robot-chart"></canvas>
+          </div>
+          <div id="chart" aria-label="Graphique TradingView"></div>
+        </div>
 
         <aside id="panel">
           <div class="card">
@@ -122,6 +139,7 @@
   <script src="js/broker.js"></script>
   <script src="js/feed.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/chart.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
